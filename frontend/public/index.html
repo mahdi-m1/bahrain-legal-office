@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مكتب قانوني بحريني</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>body{font-family:Segoe UI,Tahoma,sans-serif}.tab-active{border-bottom:3px solid #1e40af;color:#1e40af;font-weight:700}.drop-zone.dragover{background:#dbeafe;border-color:#1e40af}</style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+<header class="bg-blue-900 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between flex-wrap gap-2">
+    <div><h1 class="text-2xl font-bold">مكتب قانوني بحريني متكامل</h1>
+    <p class="text-blue-200 text-sm">Claude Agent Teams · PDF/Word · قضايا</p></div>
+    <div class="flex items-center gap-3">
+      <span id="current-case" class="text-sm text-blue-200"></span>
+      <div id="status-badge" class="px-3 py-1 rounded-full text-sm bg-slate-500">...</div>
+    </div>
+  </div>
+</header>
+<nav class="bg-white border-b sticky top-0 z-10">
+  <div class="max-w-7xl mx-auto px-4 flex gap-4 overflow-x-auto">
+    <button onclick="showTab('dashboard')" class="tab-btn py-3 px-2 tab-active" data-tab="dashboard">لوحة التحكم</button>
+    <button onclick="showTab('cases')" class="tab-btn py-3 px-2" data-tab="cases">القضايا</button>
+    <button onclick="showTab('upload')" class="tab-btn py-3 px-2" data-tab="upload">رفع ملفات</button>
+    <button onclick="showTab('results')" class="tab-btn py-3 px-2" data-tab="results">النتائج</button>
+    <button onclick="showTab('archive')" class="tab-btn py-3 px-2" data-tab="archive">الأرشيف</button>
+    <button onclick="showTab('logs')" class="tab-btn py-3 px-2" data-tab="logs">السجلات</button>
+  </div>
+</nav>
+<main class="max-w-7xl mx-auto px-4 py-6">
+<section id="tab-dashboard" class="tab-content">
+  <div class="grid md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl shadow p-5"><div class="text-slate-500 text-sm">قيد التحليل</div><div id="stat-input" class="text-3xl font-bold text-blue-700">0</div></div>
+    <div class="bg-white rounded-xl shadow p-5"><div class="text-slate-500 text-sm">نتائج</div><div id="stat-output" class="text-3xl font-bold text-green-700">0</div></div>
+    <div class="bg-white rounded-xl shadow p-5"><div class="text-slate-500 text-sm">مؤرشف</div><div id="stat-archive" class="text-3xl font-bold text-purple-700">0</div></div>
+  </div>
+  <div class="bg-white rounded-xl shadow p-6 mb-6">
+    <h2 class="text-xl font-bold mb-4">فريق الوكلاء</h2>
+    <div class="flex flex-wrap gap-3 mb-4">
+      <button onclick="startTeam()" class="bg-blue-700 text-white px-5 py-2 rounded-lg">تشغيل الفريق</button>
+      <button onclick="stopTeam()" class="bg-red-600 text-white px-5 py-2 rounded-lg">إيقاف</button>
+    </div>
+    <p id="team-msg" class="text-sm text-slate-600"></p>
+  </div>
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-xl font-bold mb-4">أوامر سريعة</h2>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <button onclick="sendCommand('حلل جميع الملفات في input/')" class="bg-slate-100 p-3 rounded-lg text-right">تحليل الملفات</button>
+      <button onclick="sendCommand('اكتب مذكرة طعن ثم صدّرها PDF و Word')" class="bg-slate-100 p-3 rounded-lg text-right">مذكرة طعن + تصدير</button>
+      <button onclick="sendCommand('لخّص المستندات وصدّر النتيجة')" class="bg-slate-100 p-3 rounded-lg text-right">تلخيص + تصدير</button>
+      <button onclick="sendCommand('ابحث في المصادر الرسمية البحرينية فقط')" class="bg-slate-100 p-3 rounded-lg text-right">بحث قانوني</button>
+    </div>
+    <textarea id="custom-cmd" rows="2" class="w-full border rounded-lg p-3 mt-4" placeholder="أمر مخصص..."></textarea>
+    <button onclick="sendCustom()" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg">إرسال</button>
+  </div>
+</section>
+<section id="tab-cases" class="tab-content hidden">
+  <div class="bg-white rounded-xl shadow p-6 mb-6">
+    <h2 class="text-xl font-bold mb-4">قضية جديدة</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      <input id="case-title" class="border rounded-lg p-3" placeholder="عنوان القضية" />
+      <input id="case-number" class="border rounded-lg p-3" placeholder="رقم القضية" />
+      <input id="case-court" class="border rounded-lg p-3" placeholder="المحكمة" />
+      <input id="case-client" class="border rounded-lg p-3" placeholder="الموكل" />
+    </div>
+    <button onclick="createCase()" class="mt-4 bg-blue-700 text-white px-6 py-2 rounded-lg">إنشاء + توليد المجلدات</button>
+    <p id="case-msg" class="mt-2 text-sm text-green-700"></p>
+  </div>
+  <div class="bg-white rounded-xl shadow p-6"><h2 class="text-xl font-bold mb-4">القضايا</h2><div id="cases-list" class="space-y-2"></div></div>
+</section>
+<section id="tab-upload" class="tab-content hidden">
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-xl font-bold mb-4">رفع ملفات</h2>
+    <div id="drop-zone" class="drop-zone border-2 border-dashed border-slate-300 rounded-xl p-12 text-center cursor-pointer">
+      <p class="text-lg text-slate-600">اسحب الملفات أو انقر</p>
+      <input type="file" id="file-input" multiple class="hidden" accept=".pdf,.doc,.docx,.txt,.md,.png,.jpg,.jpeg" />
+    </div>
+    <div id="upload-status" class="mt-4 text-sm"></div>
+    <h3 class="font-bold mt-6 mb-2">input/</h3><div id="input-list" class="space-y-2"></div>
+  </div>
+</section>
+<section id="tab-results" class="tab-content hidden">
+  <div class="bg-white rounded-xl shadow p-6"><h2 class="text-xl font-bold mb-4">النتائج</h2><div id="output-list" class="space-y-2"></div></div>
+</section>
+<section id="tab-archive" class="tab-content hidden">
+  <div class="bg-white rounded-xl shadow p-6"><h2 class="text-xl font-bold mb-4">الأرشيف</h2><div id="archive-list" class="space-y-2"></div></div>
+</section>
+<section id="tab-logs" class="tab-content hidden">
+  <div class="bg-white rounded-xl shadow p-6">
+    <div class="flex justify-between mb-4"><h2 class="text-xl font-bold">السجلات</h2><button onclick="loadLogs()" class="text-blue-600 text-sm">تحديث</button></div>
+    <pre id="log-content" class="bg-slate-900 text-green-400 p-4 rounded-lg text-xs overflow-auto max-h-[60vh] whitespace-pre-wrap direction-ltr text-left"></pre>
+  </div>
+</section>
+</main>
+<script>
+const socket=io();
+socket.on('files-updated',()=>refreshAll());
+socket.on('cases-updated',()=>loadCases());
+socket.on('team-status',d=>{document.getElementById('team-msg').textContent=d.active?'الفريق يعمل...':'متوقف';refreshAll();});
+function showTab(name){document.querySelectorAll('.tab-content').forEach(el=>el.classList.add('hidden'));document.getElementById('tab-'+name).classList.remove('hidden');document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('tab-active',b.dataset.tab===name));if(['upload','results','archive'].includes(name))refreshLists();if(name==='logs')loadLogs();if(name==='cases')loadCases();}
+async function refreshAll(){const s=await fetch('/api/status').then(r=>r.json());document.getElementById('stat-input').textContent=s.inputCount;document.getElementById('stat-output').textContent=s.outputCount;document.getElementById('stat-archive').textContent=s.archiveCount;document.getElementById('status-badge').textContent=s.teamActive?'نشط':'جاهز';document.getElementById('status-badge').className='px-3 py-1 rounded-full text-sm '+(s.teamActive?'bg-green-500':'bg-slate-500');document.getElementById('current-case').textContent=s.currentCase?'القضية: '+s.currentCase:'';refreshLists();}
+async function refreshLists(){await Promise.all([loadFileList('input','input-list'),loadFileList('output','output-list',true),loadFileList('archive','archive-list')]);}
+async function loadFileList(dir,elId,canExport=false){const files=await fetch('/api/files/'+dir).then(r=>r.json());const el=document.getElementById(elId);if(!files.length){el.innerHTML='<p class="text-slate-400">لا توجد ملفات</p>';return;}el.innerHTML=files.map(f=>`<div class="flex justify-between bg-slate-50 rounded-lg px-4 py-2 flex-wrap gap-2"><div><span class="font-medium">${f.name}</span> <span class="text-xs text-slate-400">${(f.size/1024).toFixed(1)} KB</span></div><div class="flex gap-2">`+`<a href="/api/download/${dir}/${encodeURIComponent(f.name)}" class="text-blue-600 text-sm">تنزيل</a>`+(canExport&&/\.(md|txt)$/i.test(f.name)?`<button onclick="exportFile('${f.name}')" class="text-green-600 text-sm">PDF/Word</button>`:'')+(canExport?`<button onclick="archiveFile('${f.name}')" class="text-purple-600 text-sm">أرشفة</button>`:'')+`<button onclick="deleteFile('${dir}','${f.name}')" class="text-red-500 text-sm">حذف</button></div></div>`).join('');}
+async function createCase(){const body={title:document.getElementById('case-title').value.trim(),caseNumber:document.getElementById('case-number').value.trim(),court:document.getElementById('case-court').value.trim(),client:document.getElementById('case-client').value.trim()};const res=await fetch('/api/cases',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());document.getElementById('case-msg').textContent=res.success?'تم: '+res.case.id:(res.error||'فشل');if(res.success){loadCases();refreshAll();}}
+async function loadCases(){const data=await fetch('/api/cases').then(r=>r.json());const el=document.getElementById('cases-list');if(!data.cases||!data.cases.length){el.innerHTML='<p class="text-slate-400">لا توجد قضايا</p>';return;}el.innerHTML=data.cases.map(c=>`<div class="flex justify-between bg-slate-50 rounded-lg px-4 py-3"><div><div class="font-bold">${c.title} ${data.current===c.id?'<span class="text-green-600 text-xs">(نشطة)</span>':''}</div><div class="text-xs text-slate-500">${c.caseNumber||''} · ${c.court||''}</div></div><button onclick="selectCase('${c.id}')" class="text-blue-600 text-sm">تفعيل</button></div>`).join('');}
+async function selectCase(id){await fetch('/api/cases/'+id+'/select',{method:'POST'});document.getElementById('case-msg').textContent='تم تفعيل: '+id;loadCases();refreshAll();}
+async function exportFile(name){const res=await fetch('/api/export/'+encodeURIComponent(name),{method:'POST'}).then(r=>r.json());alert(res.success?`Word: ${res.word}\nPDF: ${res.pdf}`:(res.error||'فشل'));if(res.success)refreshAll();}
+async function archiveFile(name){await fetch('/api/archive/'+encodeURIComponent(name),{method:'POST'});refreshAll();}
+async function deleteFile(dir,name){if(!confirm('حذف؟'))return;await fetch(`/api/files/${dir}/${encodeURIComponent(name)}`,{method:'DELETE'});refreshAll();}
+const dropZone=document.getElementById('drop-zone'),fileInput=document.getElementById('file-input');
+dropZone.onclick=()=>fileInput.click();
+dropZone.ondragover=e=>{e.preventDefault();dropZone.classList.add('dragover');};
+dropZone.ondragleave=()=>dropZone.classList.remove('dragover');
+dropZone.ondrop=e=>{e.preventDefault();dropZone.classList.remove('dragover');handleFiles(e.dataTransfer.files);};
+fileInput.onchange=()=>handleFiles(fileInput.files);
+async function handleFiles(files){const fd=new FormData();for(const f of files)fd.append('files',f);document.getElementById('upload-status').textContent='جاري الرفع...';const res=await fetch('/api/upload',{method:'POST',body:fd}).then(r=>r.json());document.getElementById('upload-status').textContent=res.success?`تم رفع ${res.files.length}`:(res.error||'فشل');refreshAll();}
+async function startTeam(){document.getElementById('team-msg').textContent='جاري التشغيل...';const res=await fetch('/api/team/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(r=>r.json());document.getElementById('team-msg').textContent=res.message||(res.success?'تم':'فشل');refreshAll();}
+async function stopTeam(){const res=await fetch('/api/team/stop',{method:'POST'}).then(r=>r.json());document.getElementById('team-msg').textContent=res.message||'تم الإيقاف';refreshAll();}
+async function sendCommand(cmd){document.getElementById('team-msg').textContent='إرسال...';await fetch('/api/team/command',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({command:cmd})});document.getElementById('team-msg').textContent='تم إرسال الأمر';}
+function sendCustom(){const cmd=document.getElementById('custom-cmd').value.trim();if(cmd)sendCommand(cmd);}
+async function loadLogs(){const data=await fetch('/api/logs/latest').then(r=>r.json());document.getElementById('log-content').textContent=data.content||'لا سجلات';}
+refreshAll();setInterval(refreshAll,10000);
+</script>
+</body>
+</html>
