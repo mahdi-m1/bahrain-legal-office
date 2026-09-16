@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  legal-office:
+    build: .
+    container_name: bahrain-legal-office
+    ports:
+      - "3847:3847"
+    volumes:
+      - ./input:/app/input
+      - ./output:/app/output
+      - ./archive:/app/archive
+      - ./logs:/app/logs
+      - ./CLAUDE.md:/app/CLAUDE.md
+      - claude-config:/root/.claude
+    environment:
+      - PORT=3847
+      - HOST=0.0.0.0
+      - CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+      - TEAMMATE_MODE=tmux
+    restart: unless-stopped
+
+volumes:
+  claude-config:

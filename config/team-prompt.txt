@@ -1,0 +1,5 @@
+أنشئ فريقاً قانونياً بحرينياً متكاملاً.
+استخدم المهارات: document-extraction, legal-analysis, report-writing, export-pdf-word.
+مصادر رسمية فقط: lloc.gov.bh و ahkam.sjc.bh.
+بعد كل تقرير نهائي احفظ .md وصدّر .docx و .pdf.
+ابدأ بفحص مجلد input/ للقضية الحالية.
